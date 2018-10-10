@@ -21,12 +21,13 @@ debug = DebugToolbarExtension(app)
 
 # HELPER FUNCTIONS
 
+
 def check_authorization(username):
     if "username" not in session:
         flash('You are not authorized')
         return False
     else:
-        #check if user has access
+        # check if user has access
 
         if username == session.get("username") or User.query.get(session.get("username")).is_admin:
             return User.query.get_or_404(username)
@@ -35,17 +36,20 @@ def check_authorization(username):
 
 # REDIRECT TO REGISTER PAGE
 
+
 @app.route('/')
 def redirect_to_register():
     """Redirect user to /register"""
 
     return redirect('/register')
 
+
 @app.route('/404')
 def show_error_page():
     """Show 404 error page"""
 
     return render_template('404.html')
+
 
 @app.route('/register', methods=['POST', 'GET'])
 def submit_register_form_data():
@@ -65,16 +69,19 @@ def submit_register_form_data():
         last_name = form.data['last_name']
 
         try:
-            user = User.register(username, password, email, first_name, last_name)
+            user = User.register(username, password, email,
+                                 first_name, last_name)
             db.session.add(user)
             db.session.commit()
         except IntegrityError:
             form.username.errors.append('Username is already taken!')
             return render_template('/register_form.html', form=form)
 
+        session["username"] = user.username
         return redirect(f'/users/{username}')
     else:
         return render_template('/register_form.html', form=form)
+
 
 @app.route('/users/<username>')
 def show_user_details(username):
@@ -89,10 +96,11 @@ def show_user_details(username):
 
     return render_template('user_details.html', user=user, feedback=feedback)
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def handle_login():
     """Display and process login form"""
-    
+
     if session.get("username"):
         username = session.get("username")
         return redirect(f'/users/{username}')
@@ -112,8 +120,9 @@ def handle_login():
             form.username.errors.append('Username or Password incorrect!')
             return render_template('login_form.html', form=form)
 
-    else: 
+    else:
         return render_template('login_form.html', form=form)
+
 
 @app.route('/logout')
 def logout_user():
@@ -124,6 +133,7 @@ def logout_user():
     return redirect('/login')
 
 # ROUTES FOR USERS AND FEEDBACK
+
 
 @app.route('/users/<username>/feedback/add', methods=['POST', 'GET'])
 def add_feedback(username):
@@ -137,9 +147,9 @@ def add_feedback(username):
     if form.validate_on_submit():
         title = form.data["title"]
         content = form.data["content"]
-        
+
         feedback = Feedback(title=title, content=content, username=username)
-        
+
         db.session.add(feedback)
         db.session.commit()
 
@@ -147,6 +157,7 @@ def add_feedback(username):
 
     else:
         return render_template('feedback_form.html', form=form)
+
 
 @app.route('/users/<username>/feedback/<feedback_id>/update', methods=['GET', 'POST'])
 def edit_feedback(username, feedback_id):
@@ -160,13 +171,14 @@ def edit_feedback(username, feedback_id):
     if form.validate_on_submit():
         feedback.title = form.data["title"]
         feedback.content = form.data["content"]
-        
+
         db.session.commit()
 
         return redirect(f'/users/{username}')
 
     else:
         return render_template('edit_feedback_form.html', form=form, user=user)
+
 
 @app.route('/users/<username>/feedback/<feedback_id>/delete', methods=['POST'])
 def delete_feedback(username, feedback_id):
@@ -180,11 +192,11 @@ def delete_feedback(username, feedback_id):
     feedback = Feedback.query.get_or_404(feedback_id)
 
     if feedback.username == user.username:
-        
+
         db.session.delete(feedback)
         db.session.commit()
 
         return redirect(f'/users/{username}')
-    
+
     else:
         raise Unauthorized()
